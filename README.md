@@ -1,4 +1,5 @@
 # No, You're Wrong! 🎯
+![Screenshot 2025-06-19 at 4 11 15 PM](https://github.com/user-attachments/assets/b406e838-0e0b-410b-99ee-48f1eea8f126)
 
 **Professional Argument Analysis & Resolution**
 
@@ -152,7 +153,7 @@ If you encounter any issues:
 3. Verify microphone permissions are granted
 4. Check the browser console for any error messages
 
-## 🎉 Built With
+## 🎉 Built With BOLT
 
 This application was built using [Bolt](https://bolt.new) - the fastest way to build and deploy full-stack web applications.
 
