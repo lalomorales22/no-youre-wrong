@@ -4,7 +4,7 @@ import { RecordArgument } from './components/RecordArgument';
 import { WaveformAnimation } from './components/WaveformAnimation';
 import { ArgumentResult } from './components/ArgumentResult';
 import { ParticipantForm } from './components/ParticipantForm';
-import { transcribeAudio, analyzeArgument } from './lib/openai';
+import { transcribeAudio, analyzeArgument } from './lib/api';
 import { Participants } from './types';
 
 function App() {
@@ -22,10 +22,10 @@ function App() {
       setIsProcessing(true);
       setCurrentView('processing');
       
-      // Step 1: Transcribe the audio
+      // Step 1: Transcribe the audio using secure API
       const transcript = await transcribeAudio(audioBlob);
       
-      // Step 2: Analyze the argument with participant names
+      // Step 2: Analyze the argument with participant names using secure API
       const analysis = await analyzeArgument(transcript, participants!);
       
       setResult(analysis);
