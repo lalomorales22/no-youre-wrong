@@ -82,7 +82,7 @@ Create 3-4 fun, romantic activities for couples to reconnect:
 - Doing a couples massage exchange
 - Creating art together
 
-You MUST respond with valid JSON containing actual numbers. Here's the exact format:
+You MUST respond with valid JSON containing actual numbers. Use "participant1" for ${participants.participant1} and "participant2" for ${participants.participant2}. Here's the exact format:
 
 {
   "analysis": "Detailed analysis of the argument",
@@ -132,6 +132,22 @@ You MUST respond with valid JSON containing actual numbers. Here's the exact for
         emotional: 15,
         communication: 15
       };
+
+      // Fix scores structure - convert participant names to participant1/participant2
+      if (parsedResult.scores) {
+        const scoreKeys = Object.keys(parsedResult.scores);
+        if (scoreKeys.length >= 2 && 
+            !parsedResult.scores.participant1 && 
+            !parsedResult.scores.participant2) {
+          
+          // Map participant names to participant1/participant2
+          const newScores = {
+            participant1: parsedResult.scores[participants.participant1] || { ...defaultScores },
+            participant2: parsedResult.scores[participants.participant2] || { ...defaultScores }
+          };
+          parsedResult.scores = newScores;
+        }
+      }
 
       if (!parsedResult.scores) {
         parsedResult.scores = {

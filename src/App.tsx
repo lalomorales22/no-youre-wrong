@@ -22,17 +22,24 @@ function App() {
       setIsProcessing(true);
       setCurrentView('processing');
       
+      console.log('Starting transcription...', { audioBlobSize: audioBlob.size });
+      
       // Step 1: Transcribe the audio using secure API
       const transcript = await transcribeAudio(audioBlob);
+      console.log('Transcription completed:', { transcriptLength: transcript.length, transcript: transcript.substring(0, 100) + '...' });
       
       // Step 2: Analyze the argument with participant names using secure API
+      console.log('Starting analysis...', { participants });
       const analysis = await analyzeArgument(transcript, participants!);
+      console.log('Analysis completed:', analysis);
       
       setResult(analysis);
       setCurrentView('result');
+      console.log('View changed to result');
     } catch (error) {
       console.error('Error processing argument:', error);
-      alert('Sorry, there was an error processing your argument. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Sorry, there was an error processing your argument: ${errorMessage}. Please try again.`);
       setCurrentView('recording');
     } finally {
       setIsProcessing(false);
