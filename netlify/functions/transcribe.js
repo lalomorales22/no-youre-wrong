@@ -30,8 +30,19 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Starting transcription process...');
+    
     // Parse the multipart form data
-    const boundary = event.headers['content-type'].split('boundary=')[1];
+    const boundary = event.headers['content-type']?.split('boundary=')[1];
+    if (!boundary) {
+      console.error('No boundary found in content-type header');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Invalid content-type header' }),
+      };
+    }
+
     const body = Buffer.from(event.body, 'base64');
     
     // Extract the audio file from the form data
@@ -48,12 +59,15 @@ exports.handler = async (event, context) => {
     }
 
     if (!audioData) {
+      console.error('No audio file found in form data');
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ error: 'No audio file found' }),
       };
     }
+
+    console.log('Audio data extracted, size:', audioData.length);
 
     // Create a temporary file for the audio
     const fs = require('fs');
@@ -64,15 +78,20 @@ exports.handler = async (event, context) => {
     const tempFile = path.join(tempDir, `audio-${Date.now()}.webm`);
     
     fs.writeFileSync(tempFile, audioData);
+    console.log('Temporary file created:', tempFile);
 
     // Transcribe the audio using OpenAI v4 syntax
+    console.log('Starting OpenAI transcription...');
     const transcript = await openai.audio.transcriptions.create({
       file: fs.createReadStream(tempFile),
       model: 'whisper-1'
     });
 
+    console.log('Transcription completed:', transcript.text);
+
     // Clean up the temporary file
     fs.unlinkSync(tempFile);
+    console.log('Temporary file cleaned up');
 
     return {
       statusCode: 200,
@@ -84,7 +103,10 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Failed to transcribe audio' }),
+      body: JSON.stringify({ 
+        error: 'Failed to transcribe audio',
+        details: error.message 
+      }),
     };
   }
 };

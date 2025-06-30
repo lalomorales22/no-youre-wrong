@@ -30,15 +30,21 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Starting argument analysis...');
+    
     const { transcript, participants } = JSON.parse(event.body);
 
     if (!transcript || !participants) {
+      console.error('Missing transcript or participants');
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ error: 'Missing transcript or participants' }),
       };
     }
+
+    console.log('Participants:', participants);
+    console.log('Transcript length:', transcript.length);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
@@ -111,7 +117,10 @@ You MUST respond with valid JSON containing actual numbers. Here's the exact for
       temperature: 0.7
     });
 
+    console.log('OpenAI analysis completed');
+
     const responseContent = completion.choices[0].message.content;
+    console.log('Raw OpenAI response:', responseContent);
 
     try {
       const parsedResult = JSON.parse(responseContent);
@@ -141,6 +150,8 @@ You MUST respond with valid JSON containing actual numbers. Here's the exact for
         ];
       }
 
+      console.log('Analysis result prepared successfully');
+
       return {
         statusCode: 200,
         headers,
@@ -148,6 +159,7 @@ You MUST respond with valid JSON containing actual numbers. Here's the exact for
       };
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', responseContent);
+      console.error('Parse error:', parseError);
       
       // Return fallback result
       return {
@@ -184,7 +196,10 @@ You MUST respond with valid JSON containing actual numbers. Here's the exact for
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Failed to analyze argument' }),
+      body: JSON.stringify({ 
+        error: 'Failed to analyze argument',
+        details: error.message 
+      }),
     };
   }
 };
