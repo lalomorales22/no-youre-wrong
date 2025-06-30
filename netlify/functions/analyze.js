@@ -1,10 +1,8 @@
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const openai = new OpenAIApi(configuration);
 
 exports.handler = async (event, context) => {
   // Enable CORS
@@ -42,7 +40,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
         {
@@ -113,7 +111,7 @@ You MUST respond with valid JSON containing actual numbers. Here's the exact for
       temperature: 0.7
     });
 
-    const responseContent = completion.data.choices[0].message.content;
+    const responseContent = completion.choices[0].message.content;
 
     try {
       const parsedResult = JSON.parse(responseContent);

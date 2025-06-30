@@ -1,10 +1,8 @@
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const openai = new OpenAIApi(configuration);
 
 exports.handler = async (event, context) => {
   // Enable CORS
@@ -67,11 +65,11 @@ exports.handler = async (event, context) => {
     
     fs.writeFileSync(tempFile, audioData);
 
-    // Transcribe the audio
-    const transcript = await openai.createTranscription(
-      fs.createReadStream(tempFile),
-      'whisper-1'
-    );
+    // Transcribe the audio using OpenAI v4 syntax
+    const transcript = await openai.audio.transcriptions.create({
+      file: fs.createReadStream(tempFile),
+      model: 'whisper-1'
+    });
 
     // Clean up the temporary file
     fs.unlinkSync(tempFile);
@@ -79,7 +77,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ transcript: transcript.data.text }),
+      body: JSON.stringify({ transcript: transcript.text }),
     };
   } catch (error) {
     console.error('Transcription error:', error);
