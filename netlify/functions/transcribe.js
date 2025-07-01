@@ -79,48 +79,23 @@ exports.handler = async (event, context) => {
 
     console.log('Audio data extracted, size:', audioData.length);
 
-    // Create a temporary file for the audio
-    const fs = require('fs');
-    const path = require('path');
-    const os = require('os');
+    // Create a File object directly from the audio data instead of using temporary files
+    const audioFile = new File([audioData], 'audio.webm', { type: 'audio/webm' });
     
-    const tempDir = os.tmpdir();
-    const tempFile = path.join(tempDir, `audio-${Date.now()}.webm`);
-    
-    try {
-      fs.writeFileSync(tempFile, audioData);
-      console.log('Temporary file created:', tempFile);
+    console.log('Starting OpenAI transcription...');
+    const transcript = await openai.audio.transcriptions.create({
+      file: audioFile,
+      model: 'whisper-1',
+      language: 'en'
+    });
 
-      // Transcribe the audio using OpenAI v4 syntax
-      console.log('Starting OpenAI transcription...');
-      const transcript = await openai.audio.transcriptions.create({
-        file: fs.createReadStream(tempFile),
-        model: 'whisper-1',
-        language: 'en'
-      });
+    console.log('Transcription completed:', transcript.text);
 
-      console.log('Transcription completed:', transcript.text);
-
-      // Clean up the temporary file
-      fs.unlinkSync(tempFile);
-      console.log('Temporary file cleaned up');
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ transcript: transcript.text }),
-      };
-    } catch (fileError) {
-      // Clean up temp file if it exists
-      try {
-        if (fs.existsSync(tempFile)) {
-          fs.unlinkSync(tempFile);
-        }
-      } catch (cleanupError) {
-        console.error('Error cleaning up temp file:', cleanupError);
-      }
-      throw fileError;
-    }
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ transcript: transcript.text }),
+    };
   } catch (error) {
     console.error('Transcription error:', error);
     return {
