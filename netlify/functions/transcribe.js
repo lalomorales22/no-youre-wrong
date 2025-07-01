@@ -32,6 +32,16 @@ exports.handler = async (event, context) => {
   try {
     console.log('Starting transcription process...');
     
+    // Check if OpenAI API key is available
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OpenAI API key not found');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'OpenAI API key not configured' }),
+      };
+    }
+    
     // Parse the multipart form data
     const boundary = event.headers['content-type']?.split('boundary=')[1];
     if (!boundary) {
@@ -58,12 +68,12 @@ exports.handler = async (event, context) => {
       }
     }
 
-    if (!audioData) {
+    if (!audioData || audioData.length === 0) {
       console.error('No audio file found in form data');
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'No audio file found' }),
+        body: JSON.stringify({ error: 'No audio file found or file is empty' }),
       };
     }
 
@@ -77,27 +87,40 @@ exports.handler = async (event, context) => {
     const tempDir = os.tmpdir();
     const tempFile = path.join(tempDir, `audio-${Date.now()}.webm`);
     
-    fs.writeFileSync(tempFile, audioData);
-    console.log('Temporary file created:', tempFile);
+    try {
+      fs.writeFileSync(tempFile, audioData);
+      console.log('Temporary file created:', tempFile);
 
-    // Transcribe the audio using OpenAI v4 syntax
-    console.log('Starting OpenAI transcription...');
-    const transcript = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(tempFile),
-      model: 'whisper-1'
-    });
+      // Transcribe the audio using OpenAI v4 syntax
+      console.log('Starting OpenAI transcription...');
+      const transcript = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(tempFile),
+        model: 'whisper-1',
+        language: 'en'
+      });
 
-    console.log('Transcription completed:', transcript.text);
+      console.log('Transcription completed:', transcript.text);
 
-    // Clean up the temporary file
-    fs.unlinkSync(tempFile);
-    console.log('Temporary file cleaned up');
+      // Clean up the temporary file
+      fs.unlinkSync(tempFile);
+      console.log('Temporary file cleaned up');
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ transcript: transcript.text }),
-    };
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ transcript: transcript.text }),
+      };
+    } catch (fileError) {
+      // Clean up temp file if it exists
+      try {
+        if (fs.existsSync(tempFile)) {
+          fs.unlinkSync(tempFile);
+        }
+      } catch (cleanupError) {
+        console.error('Error cleaning up temp file:', cleanupError);
+      }
+      throw fileError;
+    }
   } catch (error) {
     console.error('Transcription error:', error);
     return {
