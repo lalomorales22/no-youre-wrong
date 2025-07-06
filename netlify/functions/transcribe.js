@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const { Readable } = require('stream');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -79,8 +80,9 @@ exports.handler = async (event, context) => {
 
     console.log('Audio data extracted, size:', audioData.length);
 
-    // Create a File object directly from the audio data instead of using temporary files
-    const audioFile = new File([audioData], 'audio.webm', { type: 'audio/webm' });
+    // Create a readable stream from the audio data for Node.js environment
+    const audioFile = Readable.from(audioData);
+    audioFile.path = 'audio.webm';
     
     console.log('Starting OpenAI transcription...');
     const transcript = await openai.audio.transcriptions.create({
